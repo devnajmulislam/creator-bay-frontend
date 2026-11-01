@@ -5,8 +5,8 @@ export const siteConfig = {
 } as const
 
 export const publicNavigation = [
+  { label: "Home", href: "/" },
   { label: "Studios", href: "/studios" },
-  { label: "For hosts", href: "/add-studio" },
   { label: "About", href: "/about" },
 ] as const
 

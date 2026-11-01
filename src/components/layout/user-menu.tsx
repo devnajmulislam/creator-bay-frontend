@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CalendarDaysIcon,
   LayoutDashboardIcon,
@@ -9,11 +9,11 @@ import {
   LogOutIcon,
   PlusIcon,
   UserIcon,
-} from "lucide-react"
-import { toast } from "sonner"
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { useAuth } from "@/components/auth/auth-provider"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "@/components/auth/auth-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,23 +22,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import type { User } from "@/types/user"
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import type { User } from "@/types/user";
 
 interface UserMenuProps {
-  user: User
+  user: User;
 }
 
 export function UserMenu({ user }: UserMenuProps) {
-  const { signOut } = useAuth()
-  const router = useRouter()
+  const { signOut } = useAuth();
+  const router = useRouter();
 
   function handleSignOut() {
-    signOut()
-    toast.success("Signed out successfully")
-    router.push("/")
-    router.refresh()
+    signOut();
+    toast.success("Signed out successfully");
+    router.push("/");
+    router.refresh();
   }
 
   const initials = user.name
@@ -46,7 +46,7 @@ export function UserMenu({ user }: UserMenuProps) {
     .map((n) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2);
 
   return (
     <DropdownMenu>
@@ -83,17 +83,17 @@ export function UserMenu({ user }: UserMenuProps) {
             <LayoutDashboardIcon className="mr-2 size-4" />
             Dashboard
           </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/add-studio" />}>
+            <PlusIcon className="mr-2 size-4" />
+            Add New Studio
+          </DropdownMenuItem>
           <DropdownMenuItem render={<Link href="/my-listings" />}>
             <ListIcon className="mr-2 size-4" />
-            My studio listings
+            My Studio Listings
           </DropdownMenuItem>
           <DropdownMenuItem render={<Link href="/my-bookings" />}>
             <CalendarDaysIcon className="mr-2 size-4" />
-            My bookings
-          </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/add-studio" />}>
-            <PlusIcon className="mr-2 size-4" />
-            List a new studio
+            My Bookings
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -102,9 +102,9 @@ export function UserMenu({ user }: UserMenuProps) {
           onClick={handleSignOut}
         >
           <LogOutIcon className="mr-2 size-4" />
-          Sign out
+          Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

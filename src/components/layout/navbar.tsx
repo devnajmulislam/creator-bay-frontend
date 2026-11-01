@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useState } from "react"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   ArrowUpRightIcon,
   CalendarDaysIcon,
@@ -11,17 +11,17 @@ import {
   LogOutIcon,
   MenuIcon,
   PlusIcon,
-} from "lucide-react"
-import { toast } from "sonner"
-import { cn } from "cn"
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "cn";
 
-import { useAuth } from "@/components/auth/auth-provider"
-import { Brand } from "@/components/layout/brand"
-import { ThemeToggle } from "@/components/layout/theme-toggle"
-import { UserMenu } from "@/components/layout/user-menu"
-import { Container } from "@/components/shared/container"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/components/auth/auth-provider";
+import { Brand } from "@/components/layout/brand";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { UserMenu } from "@/components/layout/user-menu";
+import { Container } from "@/components/shared/container";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -29,44 +29,45 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import { publicNavigation } from "@/lib/constants"
+} from "@/components/ui/sheet";
+import { publicNavigation } from "@/lib/constants";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") {
-    return pathname === "/"
+    return pathname === "/";
   }
 
-  return pathname === href || pathname.startsWith(`${href}/`)
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 const mobileAccountLinks = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
   { label: "My listings", href: "/my-listings", icon: ListIcon },
   { label: "My bookings", href: "/my-bookings", icon: CalendarDaysIcon },
-] as const
+] as const;
 
 export function Navbar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { user, isReady, signOut } = useAuth()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, isReady, signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   function closeMobile() {
-    setMobileOpen(false)
+    setMobileOpen(false);
   }
 
   function handleSignOut() {
     // signOut()
-    closeMobile()
-    toast.success("Signed out")
-    router.push("/")
-    router.refresh()
+    closeMobile();
+    toast.success("Signed out");
+    router.push("/");
+    router.refresh();
   }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
       <Container className="flex h-16 items-center justify-between gap-4 sm:h-[4.5rem]">
+        {/* nav left site */}
         <Brand />
 
         <nav
@@ -74,7 +75,7 @@ export function Navbar() {
           className="hidden items-center gap-1 lg:flex"
         >
           {publicNavigation.map((item) => {
-            const active = isActive(pathname, item.href)
+            const active = isActive(pathname, item.href);
 
             return (
               <Link
@@ -88,23 +89,12 @@ export function Navbar() {
               >
                 {item.label}
               </Link>
-            )
+            );
           })}
         </nav>
 
         <div className="flex items-center gap-1.5">
           <ThemeToggle className="hidden sm:inline-flex" />
-
-          <Link
-            href="/add-studio"
-            className={cn(
-              buttonVariants({ size: "sm" }),
-              "hidden gap-1.5 sm:inline-flex",
-            )}
-          >
-            <PlusIcon />
-            List your studio
-          </Link>
 
           {!isReady ? (
             <div
@@ -143,10 +133,7 @@ export function Navbar() {
             >
               <MenuIcon />
             </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-full max-w-sm gap-0 p-0"
-            >
+            <SheetContent side="right" className="w-full max-w-sm gap-0 p-0">
               <SheetHeader className="border-b border-border px-5 py-4 pr-14">
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
                 <SheetDescription className="sr-only">
@@ -158,7 +145,7 @@ export function Navbar() {
               <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
                 <nav aria-label="Mobile navigation" className="grid gap-0.5">
                   {publicNavigation.map((item) => {
-                    const active = isActive(pathname, item.href)
+                    const active = isActive(pathname, item.href);
 
                     return (
                       <Link
@@ -174,7 +161,7 @@ export function Navbar() {
                         {item.label}
                         <ArrowUpRightIcon className="size-4 text-muted-foreground/70" />
                       </Link>
-                    )
+                    );
                   })}
                 </nav>
 
@@ -188,7 +175,9 @@ export function Navbar() {
                 ) : user ? (
                   <div className="grid gap-0.5">
                     <div className="px-3 py-2">
-                      <p className="truncate text-sm font-medium">{user.name}</p>
+                      <p className="truncate text-sm font-medium">
+                        {user.name}
+                      </p>
                       <p className="truncate text-xs text-muted-foreground">
                         {user.email}
                       </p>
@@ -250,5 +239,5 @@ export function Navbar() {
         </div>
       </Container>
     </header>
-  )
+  );
 }
