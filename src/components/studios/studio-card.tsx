@@ -72,17 +72,10 @@ export function StudioCard({ studio }: StudioCardProps) {
             <UsersIcon className="size-3.5" />
             Up to {studio.capacity} people
           </span>
-          {studio.instantBook ? (
-            <span className="inline-flex items-center gap-1 font-medium text-foreground">
-              <ZapIcon className="size-3.5 text-primary" />
-              Instant book
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 font-medium text-foreground">
-              View space
-              <ArrowUpRightIcon className="size-3.5" />
-            </span>
-          )}
+          <span className="inline-flex items-center gap-1 font-medium text-foreground">
+            View Details
+            <ArrowUpRightIcon className="size-3.5" />
+          </span>
         </div>
       </div>
     </Link>

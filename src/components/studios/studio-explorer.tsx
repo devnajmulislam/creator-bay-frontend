@@ -20,33 +20,17 @@ import {
 import {
   getAllStudios,
   getStudioCategoryOptions,
-  getStudioLocations,
-  getStudioPriceBounds,
 } from "@/services/studio-service"
 import type {
+  Studio,
   StudioCategorySlug,
   StudioSortOption,
 } from "@/types/studio"
 
 const PAGE_SIZE = 6
 
-const STUDIOS = getAllStudios()
 const CATEGORIES = getStudioCategoryOptions()
-const LOCATIONS = getStudioLocations()
-const PRICE_BOUNDS = getStudioPriceBounds()
-
 const VALID_CATEGORIES = new Set(CATEGORIES.map((category) => category.slug))
-
-const CATEGORY_COUNTS = CATEGORIES.reduce(
-  (counts, category) => {
-    counts[category.slug] = STUDIOS.filter(
-      (studio) => studio.categorySlug === category.slug,
-    ).length
-
-    return counts
-  },
-  {} as Record<StudioCategorySlug, number>,
-)
 
 const sortOptions: { value: StudioSortOption; label: string }[] = [
   { value: "recommended", label: "Recommended" },
@@ -72,10 +56,7 @@ function parseCategoryParam(value: string | null): StudioCategorySlug[] {
   )
 }
 
-function sortStudios(
-  studios: ReturnType<typeof getAllStudios>,
-  sort: StudioSortOption,
-) {
+function sortStudios(studios: Studio[], sort: StudioSortOption) {
   const results = [...studios]
 
   switch (sort) {
@@ -125,34 +106,123 @@ export function StudioExplorer() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  const defaultStudios = getAllStudios()
+  const defaultPrices = defaultStudios.map((s) => s.pricePerHour)
+  const defaultMin = Math.floor(Math.min(...defaultPrices) / 10) * 10
+  const defaultMax = Math.ceil(Math.max(...defaultPrices) / 10) * 10
+
+  const [studios, setStudios] = useState<Studio[]>(defaultStudios)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const [search, setSearch] = useState("")
+  const [location, setLocation] = useState("all")
+  const [priceRange, setPriceRange] = useState<[number, number]>([defaultMin, defaultMax])
+  const [minRating, setMinRating] = useState(0)
+  const [sort, setSort] = useState<StudioSortOption>("recommended")
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  useEffect(() => {
+    async function loadStudios() {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+        const res = await fetch(`${baseUrl}/studios`, { cache: "no-store" })
+        if (res.ok) {
+          const data = await res.json()
+          const list = Array.isArray(data) ? data : data.studios || data.data || []
+          if (list.length > 0) {
+            const mapped: Studio[] = list.map((item: Record<string, unknown>, index: number) => {
+              const rawId = item._id
+              const id = typeof rawId === "object" && rawId !== null && "$oid" in rawId
+                ? (rawId as { $oid?: string }).$oid
+                : typeof rawId === "string"
+                ? rawId
+                : `studio-${index + 1}`
+
+              const categoryName = typeof item.category === "string" ? item.category : "Photo Studio"
+              const categorySlug: StudioCategorySlug = categoryName.toLowerCase().includes("film")
+                ? "film"
+                : categoryName.toLowerCase().includes("podcast")
+                ? "podcast"
+                : categoryName.toLowerCase().includes("music")
+                ? "music"
+                : categoryName.toLowerCase().includes("workshop")
+                ? "creative"
+                : "photography"
+
+              return {
+                id: String(id),
+                slug: String(id),
+                name: typeof item.name === "string" ? item.name : "Creative Studio",
+                category: categoryName,
+                categorySlug,
+                description: typeof item.description === "string" ? item.description : "Professional creative workspace equipped with top-tier gear.",
+                location: typeof item.location === "string" ? item.location : "New York, NY",
+                pricePerHour: Number(item.pricePerHour) || 150,
+                rating: 4.8,
+                reviewCount: Number(item.reviewCount) || 12,
+                capacity: Number(item.capacity) || 10,
+                image: typeof item.image === "string" ? item.image : "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1200&auto=format&fit=crop",
+                imageAlt: typeof item.name === "string" ? item.name : "Studio workspace",
+                amenities: ["High-speed Wi-Fi", "Professional Lighting", "Sound System", "Air Conditioning"],
+                featured: index < 6,
+                instantBook: true,
+              }
+            })
+            setStudios(mapped)
+            const prices = mapped.map((s) => s.pricePerHour)
+            const newMin = Math.floor(Math.min(...prices) / 10) * 10
+            const newMax = Math.ceil(Math.max(...prices) / 10) * 10
+            setPriceRange([newMin, newMax])
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch studios on client, using default", err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadStudios()
+  }, [])
+
+  const locations = useMemo(() => {
+    return Array.from(new Set(studios.map((studio) => studio.location))).sort((a, b) =>
+      a.localeCompare(b),
+    )
+  }, [studios])
+
+  const priceBounds = useMemo(() => {
+    if (studios.length === 0) return { min: 50, max: 500 }
+    const prices = studios.map((studio) => studio.pricePerHour)
+    return {
+      min: Math.floor(Math.min(...prices) / 10) * 10,
+      max: Math.ceil(Math.max(...prices) / 10) * 10,
+    }
+  }, [studios])
+
+  const categoryCounts = useMemo(() => {
+    return CATEGORIES.reduce(
+      (counts, category) => {
+        counts[category.slug] = studios.filter(
+          (studio) => studio.categorySlug === category.slug,
+        ).length
+
+        return counts
+      },
+      {} as Record<StudioCategorySlug, number>,
+    )
+  }, [studios])
+
   const categoryParam = searchParams.get("category")
   const selectedCategories = useMemo(
     () => parseCategoryParam(categoryParam),
     [categoryParam],
   )
 
-  const [search, setSearch] = useState("")
-  const [location, setLocation] = useState("all")
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    PRICE_BOUNDS.min,
-    PRICE_BOUNDS.max,
-  ])
-  const [minRating, setMinRating] = useState(0)
-  const [sort, setSort] = useState<StudioSortOption>("recommended")
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setIsLoading(false), 450)
-
-    return () => window.clearTimeout(timer)
-  }, [])
-
   const filteredStudios = useMemo(() => {
     const term = search.trim().toLowerCase()
     const categorySet = new Set(selectedCategories)
 
-    return STUDIOS.filter((studio) => {
+    return studios.filter((studio) => {
       const matchesSearch =
         !term ||
         studio.name.toLowerCase().includes(term) ||
@@ -173,7 +243,7 @@ export function StudioExplorer() {
         matchesRating
       )
     })
-  }, [search, selectedCategories, location, priceRange, minRating])
+  }, [studios, search, selectedCategories, location, priceRange, minRating])
 
   const sortedStudios = useMemo(
     () => sortStudios(filteredStudios, sort),
@@ -186,8 +256,8 @@ export function StudioExplorer() {
     Boolean(search.trim()) ||
     selectedCategories.length > 0 ||
     location !== "all" ||
-    priceRange[0] !== PRICE_BOUNDS.min ||
-    priceRange[1] !== PRICE_BOUNDS.max ||
+    priceRange[0] !== priceBounds.min ||
+    priceRange[1] !== priceBounds.max ||
     minRating > 0
 
   function updateCategoryParam(nextCategories: StudioCategorySlug[]) {
@@ -221,7 +291,7 @@ export function StudioExplorer() {
   function handleClearFilters() {
     setSearch("")
     setLocation("all")
-    setPriceRange([PRICE_BOUNDS.min, PRICE_BOUNDS.max])
+    setPriceRange([priceBounds.min, priceBounds.max])
     setMinRating(0)
     setSort("recommended")
     setVisibleCount(PAGE_SIZE)
@@ -237,17 +307,17 @@ export function StudioExplorer() {
           setVisibleCount(PAGE_SIZE)
         }}
         categories={CATEGORIES}
-        categoryCounts={CATEGORY_COUNTS}
+        categoryCounts={categoryCounts}
         selectedCategories={selectedCategories}
         onToggleCategory={handleToggleCategory}
-        locations={LOCATIONS}
+        locations={locations}
         location={location}
         onLocationChange={(value) => {
           setLocation(value)
           setVisibleCount(PAGE_SIZE)
         }}
         priceRange={priceRange}
-        priceBounds={PRICE_BOUNDS}
+        priceBounds={priceBounds}
         onPriceRangeChange={(value) => {
           setPriceRange(value)
           setVisibleCount(PAGE_SIZE)
