@@ -41,13 +41,45 @@ export function BookingDialog({ studio }: BookingDialogProps) {
   const subtotal = studio.pricePerHour * duration
   const total = subtotal + studio.securityDeposit
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (!date || !startTime) {
       setError("Choose a date and start time to continue.")
       return
     }
+
+const studioBookingData = {
+      // studioId: studio.id,
+      studioName: studio.name,
+      date,
+      startTime,
+      duration,
+      guests,
+      subtotal,
+      securityDeposit: studio.securityDeposit,
+      total,
+    }
+
+
+ const result = await fetch(
+      `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/studios/my-bookings`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(studioBookingData),
+      },
+    );
+
+    const data = await result.json();
+
+    console.log(data)
+
+    // console.log(studioBookingData, "bookingData")
+
+
 
     setError("")
     setOpen(false)

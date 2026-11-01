@@ -28,7 +28,7 @@ export default function RegisterPage() {
       signUp(email, name);
       setLoading(false);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      // router.push("/dashboard");
       router.refresh();
     }, 600);
   }

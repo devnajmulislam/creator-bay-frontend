@@ -64,7 +64,7 @@ export default async function StudioDetailPage({
 
     if (res.ok) {
       const data = await res.json()
-      console.log("studiosData fetched for [id]:", data)
+      // console.log("studiosData fetched for [id]:", data)
       const item = data.studio || data.data || data
 
       if (item && (item._id || item.name)) {

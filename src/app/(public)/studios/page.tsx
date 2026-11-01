@@ -1,17 +1,20 @@
-import type { Metadata } from "next"
-import { Suspense } from "react"
+import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { Container, Section } from "@/components/shared/container"
-import { StudioExplorer } from "@/components/studios/studio-explorer"
-import { StudioCardSkeleton } from "@/components/studios/studio-card-skeleton"
-import { Skeleton } from "@/components/ui/skeleton"
-import { getAllStudios, getStudioCategoryOptions } from "@/services/studio-service"
+import { Container, Section } from "@/components/shared/container";
+import { StudioExplorer } from "@/components/studios/studio-explorer";
+import { StudioCardSkeleton } from "@/components/studios/studio-card-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getAllStudios,
+  getStudioCategoryOptions,
+} from "@/services/studio-service";
 
 export const metadata: Metadata = {
   title: "Explore studios",
   description:
     "Browse independent photography, film, podcast, music, creative, and event spaces on CreatorBay.",
-}
+};
 
 function StudioExplorerFallback() {
   return (
@@ -55,12 +58,12 @@ function StudioExplorerFallback() {
         <span className="sr-only">Loading studios</span>
       </div>
     </div>
-  )
+  );
 }
 
-export default function StudiosPage() {
-  const studios = getAllStudios()
-  const categories = getStudioCategoryOptions()
+export default async function StudiosPage() {
+  const studios = getAllStudios();
+  const categories = getStudioCategoryOptions();
 
   return (
     <>
@@ -116,5 +119,5 @@ export default function StudiosPage() {
         </Container>
       </Section>
     </>
-  )
+  );
 }
