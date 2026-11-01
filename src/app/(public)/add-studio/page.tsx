@@ -1,37 +1,100 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { ArrowRightIcon, BuildingIcon, DollarSignIcon, MapPinIcon, UsersIcon } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowRightIcon,
+  BuildingIcon,
+  DollarSignIcon,
+  ImageIcon,
+  MapPinIcon,
+  MessageSquareIcon,
+  UsersIcon,
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { Container, Section } from "@/components/shared/container"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Container, Section } from "@/components/shared/container";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
+
+const PRESET_CATEGORIES = [
+  "Photo Studio",
+  "Film Stage",
+  "Podcast Lounge",
+  "Music Suite",
+  "Workshop",
+  "Creative Space",
+  "Event Venue",
+];
 
 export default function AddStudioPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("Photo Studio");
+  const [customCategory, setCustomCategory] = useState("");
+  const [isCustom, setIsCustom] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
-    category: "Photography",
-    location: "Brooklyn, NY",
-    pricePerHour: "120",
-    capacity: "25",
+    location: "",
+    pricePerHour: "",
+    securityDeposit: "",
+    capacity: "",
+    image: "",
+    reviewCount: "0",
     description: "",
-  })
+  });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      toast.success("Studio listed successfully!")
-      router.push("/my-listings")
-      router.refresh()
-    }, 700)
+  function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = e.target.value;
+    if (val === "custom") {
+      setIsCustom(true);
+      setSelectedCategory("");
+    } else {
+      setIsCustom(false);
+      setSelectedCategory(val);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    const finalCategory = isCustom ? customCategory : selectedCategory;
+
+    const newStudioData = {
+      ...formData,
+      category: finalCategory,
+    };
+
+    const result = await fetch(
+      `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/studios`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newStudioData),
+      },
+    );
+
+    const data = await result.json();
+    // console.log(data)
+    if (data.acknowledged) {
+      setTimeout(() => {
+        setLoading(false);
+        toast.success(
+          `Studio "${formData.name || "New Studio"}" listed successfully!`,
+        );
+        // router.push("/my-listings")
+        router.refresh();
+      }, 700);
+    }
   }
 
   return (
@@ -40,22 +103,27 @@ export default function AddStudioPage() {
         <div className="rounded-3xl border border-border/80 bg-card p-8 sm:p-12 shadow-sm">
           <div className="text-center">
             <p className="eyebrow text-primary">Host with CreatorBay</p>
-            <h1 className="font-heading text-3xl sm:text-4xl mt-2">List your creative space</h1>
+            <h1 className="font-heading text-3xl sm:text-4xl mt-2">
+              List your creative space
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Share your studio with independent creators, photographers, and filmmakers.
+              Share your studio with independent creators, photographers, and
+              filmmakers.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Studio name</Label>
+              <Label htmlFor="name">Studio title</Label>
               <div className="relative">
                 <BuildingIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
                 <Input
                   id="name"
                   placeholder="e.g. Lumen North Loft"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="pl-9"
                   required
                 />
@@ -64,23 +132,109 @@ export default function AddStudioPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="category">Discipline / Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  required
-                />
+                <Label htmlFor="category">Category</Label>
+                <div className="flex flex-col gap-2">
+                  <NativeSelect
+                    id="category"
+                    className="w-full h-10"
+                    value={isCustom ? "custom" : selectedCategory}
+                    onChange={handleCategoryChange}
+                  >
+                    {PRESET_CATEGORIES.map((cat) => (
+                      <NativeSelectOption key={cat} value={cat}>
+                        {cat}
+                      </NativeSelectOption>
+                    ))}
+                    <NativeSelectOption value="custom">
+                      Other / Custom category...
+                    </NativeSelectOption>
+                  </NativeSelect>
+                  {isCustom && (
+                    <Input
+                      placeholder="Enter custom category"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      required
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">Location / Address</Label>
                 <div className="relative">
                   <MapPinIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
                   <Input
                     id="location"
+                    placeholder="e.g. Brooklyn, NY"
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, location: e.target.value })
+                    }
+                    className="pl-9"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="price">Hourly rate ($)</Label>
+                <div className="relative">
+                  <DollarSignIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    placeholder="120"
+                    value={formData.pricePerHour}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pricePerHour: e.target.value })
+                    }
+                    className="pl-9"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deposit">
+                  Security deposit ($){" "}
+                  <span className="text-xs text-muted-foreground">(Opt.)</span>
+                </Label>
+                <div className="relative">
+                  <DollarSignIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Input
+                    id="deposit"
+                    type="number"
+                    min="0"
+                    placeholder="250"
+                    value={formData.securityDeposit}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        securityDeposit: e.target.value,
+                      })
+                    }
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Max capacity</Label>
+                <div className="relative">
+                  <UsersIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Input
+                    id="capacity"
+                    type="number"
+                    min="1"
+                    placeholder="25"
+                    value={formData.capacity}
+                    onChange={(e) =>
+                      setFormData({ ...formData, capacity: e.target.value })
+                    }
                     className="pl-9"
                     required
                   />
@@ -90,14 +244,17 @@ export default function AddStudioPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="price">Price per hour ($)</Label>
+                <Label htmlFor="image">Image URL</Label>
                 <div className="relative">
-                  <DollarSignIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <ImageIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
                   <Input
-                    id="price"
-                    type="number"
-                    value={formData.pricePerHour}
-                    onChange={(e) => setFormData({ ...formData, pricePerHour: e.target.value })}
+                    id="image"
+                    type="url"
+                    placeholder="https://images.unsplash.com/..."
+                    value={formData.image}
+                    onChange={(e) =>
+                      setFormData({ ...formData, image: e.target.value })
+                    }
                     className="pl-9"
                     required
                   />
@@ -105,16 +262,19 @@ export default function AddStudioPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity (people)</Label>
+                <Label htmlFor="reviews">Initial Review Count</Label>
                 <div className="relative">
-                  <UsersIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <MessageSquareIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
                   <Input
-                    id="capacity"
+                    id="reviews"
                     type="number"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                    min="0"
+                    placeholder="0"
+                    value={formData.reviewCount}
+                    onChange={(e) =>
+                      setFormData({ ...formData, reviewCount: e.target.value })
+                    }
                     className="pl-9"
-                    required
                   />
                 </div>
               </div>
@@ -127,7 +287,9 @@ export default function AddStudioPage() {
                 placeholder="Describe your studio's lighting, acoustics, backdrop options, and amenities..."
                 rows={5}
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 required
               />
             </div>
@@ -140,5 +302,5 @@ export default function AddStudioPage() {
         </div>
       </Container>
     </Section>
-  )
+  );
 }
