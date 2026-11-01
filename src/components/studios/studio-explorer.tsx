@@ -21,6 +21,7 @@ import {
   getAllStudios,
   getStudioCategoryOptions,
 } from "@/services/studio-service"
+import { getStudioCategorySlug } from "@/lib/studio-category"
 import type {
   Studio,
   StudioCategorySlug,
@@ -139,15 +140,7 @@ export function StudioExplorer() {
                 : `studio-${index + 1}`
 
               const categoryName = typeof item.category === "string" ? item.category : "Photo Studio"
-              const categorySlug: StudioCategorySlug = categoryName.toLowerCase().includes("film")
-                ? "film"
-                : categoryName.toLowerCase().includes("podcast")
-                ? "podcast"
-                : categoryName.toLowerCase().includes("music")
-                ? "music"
-                : categoryName.toLowerCase().includes("workshop")
-                ? "creative"
-                : "photography"
+              const categorySlug = getStudioCategorySlug(categoryName)
 
               return {
                 id: String(id),

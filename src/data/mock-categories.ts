@@ -4,7 +4,7 @@ export const mockCategories: StudioCategory[] = [
   {
     id: "category-photography",
     slug: "photography",
-    name: "Photography",
+    name: "Photo Studios",
     description:
       "Daylight studios, cycloramas, and fully equipped sets for editorial and commercial work.",
     listingCount: 124,
@@ -14,7 +14,7 @@ export const mockCategories: StudioCategory[] = [
   {
     id: "category-film",
     slug: "film",
-    name: "Film & Video",
+    name: "Sound Stages",
     description:
       "Production stages, blackout rooms, and load-in-ready spaces built for crews.",
     listingCount: 68,
@@ -24,7 +24,7 @@ export const mockCategories: StudioCategory[] = [
   {
     id: "category-podcast",
     slug: "podcast",
-    name: "Podcast & Audio",
+    name: "Podcast Rooms",
     description:
       "Quiet, treated rooms with broadcast mics and remote-guest setups.",
     listingCount: 46,
@@ -34,7 +34,7 @@ export const mockCategories: StudioCategory[] = [
   {
     id: "category-music",
     slug: "music",
-    name: "Music",
+    name: "Music Suites",
     description:
       "Recording rooms, vocal booths, and analog gear for sessions of every size.",
     listingCount: 37,
@@ -44,7 +44,7 @@ export const mockCategories: StudioCategory[] = [
   {
     id: "category-creative",
     slug: "creative",
-    name: "Creative Studio",
+    name: "Art Workshops",
     description:
       "Open lofts and flexible workrooms for workshops, fittings, and content days.",
     listingCount: 52,

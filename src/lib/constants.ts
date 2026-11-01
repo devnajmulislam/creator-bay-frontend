@@ -38,10 +38,11 @@ export const footerNavigation = [
   {
     title: "Categories",
     links: [
-      { label: "Photography", href: "/studios?category=photography" },
-      { label: "Film & Video", href: "/studios?category=film" },
-      { label: "Podcast & Audio", href: "/studios?category=podcast" },
-      { label: "Music", href: "/studios?category=music" },
+      { label: "Photo Studios", href: "/studios?category=photography" },
+      { label: "Sound Stages", href: "/studios?category=film" },
+      { label: "Podcast Rooms", href: "/studios?category=podcast" },
+      { label: "Music Suites", href: "/studios?category=music" },
+      { label: "Art Workshops", href: "/studios?category=creative" },
     ],
   },
 ] as const

@@ -55,7 +55,8 @@ function CategoryCard({ category }: { category: StudioCategory }) {
           {category.name}
         </h3>
         <p className="mt-1 text-sm text-white/65">
-          {category.listingCount} spaces
+          {category.listingCount}{" "}
+          {category.listingCount === 1 ? "space" : "spaces"}
         </p>
         <p className="mt-3 line-clamp-2 max-w-xs text-xs leading-relaxed text-white/60">
           {category.description}
@@ -85,16 +86,19 @@ function CategoryGridSkeleton() {
 
 async function CategoryGrid() {
   const categories = await getStudioCategories()
+  const visibleCategories = categories
+    .filter((category) => category.listingCount > 0)
+    .slice(0, 6)
 
-  if (categories.length === 0) {
+  if (visibleCategories.length === 0) {
     return (
       <EmptyState
         icon={PaletteIcon}
-        title="Categories are being refreshed"
-        description="Browse the full studio collection while we update the category edit."
+        title="No studio categories yet"
+        description="Categories appear automatically once studios are listed. Add your first studio to create one."
         action={
-          <Link href="/studios" className={buttonVariants()}>
-            Browse all studios
+          <Link href="/add-studio" className={buttonVariants()}>
+            Add a studio
           </Link>
         }
       />
@@ -104,7 +108,7 @@ async function CategoryGrid() {
   return (
     <Reveal>
       <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {categories.map((category) => (
+        {visibleCategories.map((category) => (
           <CategoryCard key={category.id} category={category} />
         ))}
       </div>

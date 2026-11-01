@@ -5,11 +5,11 @@ import {
   studioGalleryPools,
 } from "@/data/mock-studio-details"
 import { mockStudios } from "@/data/mock-studios"
+import { getStudioCategorySlug } from "@/lib/studio-category"
 import type { Review } from "@/types/review"
 import type {
   Studio,
   StudioCategory,
-  StudioCategorySlug,
   StudioDetail,
   StudioImage,
 } from "@/types/studio"
@@ -36,15 +36,7 @@ function mapDbStudioToFrontend(item: BackendStudioItem, index: number): Studio {
     : `studio-${index + 1}`
 
   const categoryName = item.category || "Photo Studio"
-  const categorySlug: StudioCategorySlug = categoryName.toLowerCase().includes("film")
-    ? "film"
-    : categoryName.toLowerCase().includes("podcast")
-    ? "podcast"
-    : categoryName.toLowerCase().includes("music")
-    ? "music"
-    : categoryName.toLowerCase().includes("workshop")
-    ? "creative"
-    : "photography"
+  const categorySlug = getStudioCategorySlug(categoryName)
 
   return {
     id: String(id),
@@ -81,7 +73,7 @@ export async function fetchStudiosFromServer(): Promise<Studio[]> {
       ? studiosData
       : studiosData.studios || studiosData.data || []
     if (list.length === 0) {
-      return mockStudios
+      return []
     }
     return list.map((item: BackendStudioItem, index: number) => mapDbStudioToFrontend(item, index))
   } catch (err) {
@@ -97,13 +89,12 @@ export async function getFeaturedStudios(limit = 6): Promise<Studio[]> {
 
 export async function getStudioCategories(): Promise<StudioCategory[]> {
   const studios = await fetchStudiosFromServer()
-  return mockCategories.map((category) => {
-    const count = studios.filter((s) => s.categorySlug === category.slug).length
-    return {
-      ...category,
-      listingCount: count > 0 ? count : category.listingCount,
-    }
-  })
+  return mockCategories.map((category) => ({
+    ...category,
+    listingCount: studios.filter(
+      (studio) => studio.categorySlug === category.slug,
+    ).length,
+  }))
 }
 
 export async function getAllStudiosAsync(): Promise<Studio[]> {

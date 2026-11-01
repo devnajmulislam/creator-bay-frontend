@@ -23,7 +23,8 @@ import {
   getStudioById,
   getStudioReviews,
 } from "@/services/studio-service"
-import type { StudioCategorySlug, StudioDetail, StudioImage } from "@/types/studio"
+import { getStudioCategorySlug } from "@/lib/studio-category"
+import type { StudioDetail, StudioImage } from "@/types/studio"
 
 interface StudioDetailPageProps {
   params: Promise<{ id: string }>
@@ -76,15 +77,7 @@ export default async function StudioDetailPage({
           : id
 
         const categoryName = typeof item.category === "string" ? item.category : "Photo Studio"
-        const categorySlug: StudioCategorySlug = categoryName.toLowerCase().includes("film")
-          ? "film"
-          : categoryName.toLowerCase().includes("podcast")
-          ? "podcast"
-          : categoryName.toLowerCase().includes("music")
-          ? "music"
-          : categoryName.toLowerCase().includes("workshop")
-          ? "creative"
-          : "photography"
+        const categorySlug = getStudioCategorySlug(categoryName)
 
         const imageUrl = typeof item.image === "string" ? item.image : "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1200&auto=format&fit=crop"
 
