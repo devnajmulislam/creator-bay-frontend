@@ -35,4 +35,13 @@ export const footerNavigation = [
       { label: "My bookings", href: "/my-bookings" },
     ],
   },
+  {
+    title: "Categories",
+    links: [
+      { label: "Photography", href: "/studios?category=photography" },
+      { label: "Film & Video", href: "/studios?category=film" },
+      { label: "Podcast & Audio", href: "/studios?category=podcast" },
+      { label: "Music", href: "/studios?category=music" },
+    ],
+  },
 ] as const

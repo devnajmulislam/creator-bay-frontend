@@ -1,6 +1,8 @@
 import Link from "next/link"
 
 import { Brand } from "@/components/layout/brand"
+import { NewsletterForm } from "@/components/layout/newsletter-form"
+import { SocialLinks } from "@/components/layout/social-links"
 import { Container } from "@/components/shared/container"
 import { Separator } from "@/components/ui/separator"
 import { footerNavigation, siteConfig } from "@/lib/constants"
@@ -18,9 +20,10 @@ export function Footer() {
             <p className="eyebrow mt-6 text-muted-foreground">
               Independent spaces. Exceptional work.
             </p>
+            <NewsletterForm />
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             {footerNavigation.map((group) => (
               <div key={group.title}>
                 <p className="eyebrow text-foreground">{group.title}</p>
@@ -43,20 +46,31 @@ export function Footer() {
 
         <Separator className="my-10" />
 
-        <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            &copy; {new Date().getFullYear()} {siteConfig.name}. All rights
-            reserved.
-          </p>
-          <p>Peer-to-peer creative spaces, without the friction.</p>
+        <div className="flex flex-col gap-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1.5">
+            <p>
+              &copy; {new Date().getFullYear()} {siteConfig.name}. All rights
+              reserved.
+            </p>
+            <p className="flex flex-wrap items-center gap-x-2">
+              <Link
+                href="#"
+                className="transition-colors hover:text-foreground"
+              >
+                Terms of Service
+              </Link>
+              <span aria-hidden>·</span>
+              <Link
+                href="#"
+                className="transition-colors hover:text-foreground"
+              >
+                Privacy Policy
+              </Link>
+            </p>
+          </div>
+          <SocialLinks />
         </div>
       </Container>
-
-      <div aria-hidden className="overflow-hidden">
-        <p className="page-container pb-3 font-heading text-[clamp(4.5rem,16vw,13rem)] leading-[0.75] tracking-[-0.05em] whitespace-nowrap text-foreground/[0.04] select-none">
-          CreatorBay
-        </p>
-      </div>
     </footer>
   )
 }
