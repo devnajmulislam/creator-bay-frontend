@@ -56,8 +56,8 @@ export function Navbar() {
     setMobileOpen(false);
   }
 
-  function handleSignOut() {
-    // signOut()
+  async function handleSignOut() {
+    await signOut();
     closeMobile();
     toast.success("Signed out");
     router.push("/");
@@ -83,8 +83,9 @@ export function Navbar() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
-                  active && "text-foreground",
+                  "relative rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
+                  active &&
+                    "font-medium text-foreground after:absolute after:inset-x-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary",
                 )}
               >
                 {item.label}
@@ -182,17 +183,25 @@ export function Navbar() {
                         {user.email}
                       </p>
                     </div>
-                    {mobileAccountLinks.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={closeMobile}
-                        className="flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      >
-                        <item.icon className="size-4" />
-                        {item.label}
-                      </Link>
-                    ))}
+                    {mobileAccountLinks.map((item) => {
+                      const active = isActive(pathname, item.href);
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={closeMobile}
+                          aria-current={active ? "page" : undefined}
+                          className={cn(
+                            "flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                            active && "bg-muted font-medium text-foreground",
+                          )}
+                        >
+                          <item.icon className="size-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
                     <Button
                       variant="ghost"
                       size="sm"

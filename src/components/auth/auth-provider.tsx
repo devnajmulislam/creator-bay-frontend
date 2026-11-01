@@ -1,51 +1,39 @@
 "use client"
 
-import {
-  createContext,
-  useContext,
-  useState,
-  type ReactNode,
-} from "react"
-import { getMockUser, setMockUser } from "@/services/auth-service"
+import { createContext, useContext, type ReactNode } from "react"
+
+import { authClient, useSession } from "@/lib/auth-client"
 import type { User } from "@/types/user"
 
 interface AuthContextType {
   user: User | null
   isReady: boolean
-  signIn: (email: string, name?: string) => void
-  signOut: () => void
-  signUp: (email: string, name: string) => void
+  signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => getMockUser())
-  const [isReady] = useState(true)
+  const { data, isPending, refetch } = useSession()
+  const sessionUser = data?.user
 
-  function signIn(email: string, name = "Creator User") {
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
-      role: "host",
-    }
-    setUser(newUser)
-    setMockUser(newUser)
-  }
+  const user: User | null = sessionUser
+    ? {
+        id: sessionUser.id,
+        name: sessionUser.name,
+        email: sessionUser.email,
+        avatar: sessionUser.image ?? undefined,
+        role: "host",
+      }
+    : null
 
-  function signUp(email: string, name: string) {
-    signIn(email, name)
-  }
-
-  function signOut() {
-    setUser(null)
-    setMockUser(null)
+  async function signOut() {
+    await authClient.signOut()
+    await refetch()
   }
 
   return (
-    <AuthContext.Provider value={{ user, isReady, signIn, signOut, signUp }}>
+    <AuthContext.Provider value={{ user, isReady: !isPending, signOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -6,29 +6,66 @@ import { useRouter } from "next/navigation";
 import { ArrowRightIcon, LockIcon, MailIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/auth/auth-provider";
 import { Container, Section } from "@/components/shared/container";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { signIn } from "@/lib/auth-client";
+
+function getRedirectTarget() {
+  if (typeof window === "undefined") return "/";
+  const target = new URLSearchParams(window.location.search).get("redirect");
+  if (!target || !target.startsWith("/") || target.startsWith("//")) return "/";
+  return target;
+}
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    setTimeout(() => {
-      signIn(email, email.split("@")[0] || "Creator User");
-      setLoading(false);
-      toast.success("Logged in successfully!");
-      router.push("/dashboard");
-      router.refresh();
-    }, 600);
+
+    const { error: authError } = await signIn.email({ email, password });
+
+    setLoading(false);
+
+    if (authError) {
+      const message =
+        authError.message || "Unable to log in. Please check your credentials.";
+      setError(message);
+      toast.error("Login failed", { description: message });
+      return;
+    }
+
+    toast.success("Logged in successfully!");
+    router.push(getRedirectTarget());
+    router.refresh();
+  }
+
+  async function handleGoogleSignIn() {
+    setError("");
+    setGoogleLoading(true);
+
+    const { error: authError } = await signIn.social({
+      provider: "google",
+      callbackURL: getRedirectTarget(),
+    });
+
+    setGoogleLoading(false);
+
+    if (authError) {
+      const message =
+        authError.message || "Google sign in failed. Please try again.";
+      setError(message);
+      toast.error("Login failed", { description: message });
+    }
   }
 
   return (
@@ -53,6 +90,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"
@@ -68,6 +106,7 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-9"
@@ -75,12 +114,20 @@ export default function LoginPage() {
                 />
               </div>
             </div>
+
             <Link
               href={"#"}
               className="block text-right text-sm text-muted-foreground hover:underline"
             >
               Forgot Password?
             </Link>
+
+            {error ? (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Log in"}
               <ArrowRightIcon className="ml-2 size-4" />
@@ -97,11 +144,17 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             <small>Or</small>
           </p>
-          <Button variant={"outline"} className="cursor-pointer">
-            GOOGLE
+          <Button
+            type="button"
+            variant={"outline"}
+            className="mt-2 w-full cursor-pointer"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
+          >
+            {googleLoading ? "Connecting..." : "Continue with Google"}
           </Button>
         </div>
       </Container>

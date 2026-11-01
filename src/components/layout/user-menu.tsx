@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDaysIcon,
   LayoutDashboardIcon,
   ListIcon,
   LogOutIcon,
   PlusIcon,
-  UserIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "cn";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,28 +33,32 @@ interface UserMenuProps {
 export function UserMenu({ user }: UserMenuProps) {
   const { signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  function handleSignOut() {
-    signOut();
+  async function handleSignOut() {
+    await signOut();
     toast.success("Signed out successfully");
     router.push("/");
     router.refresh();
   }
 
-  const initials = user.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  function isActive(href: string) {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
+  const initial = user.name.trim().charAt(0).toUpperCase() || "C";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        openOnHover
+        delay={100}
+        closeDelay={200}
         render={
           <Button
             variant="ghost"
             size="icon"
+            aria-label={`Open account menu for ${user.name}`}
             className="relative size-9 rounded-full ring-offset-background transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         }
@@ -64,34 +68,60 @@ export function UserMenu({ user }: UserMenuProps) {
             <AvatarImage src={user.avatar} alt={user.name} />
           ) : null}
           <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-            {initials || "CB"}
+            {initial}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64" align="end">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem render={<Link href="/dashboard" />}>
+          <DropdownMenuItem
+            render={<Link href="/dashboard" />}
+            aria-current={isActive("/dashboard") ? "page" : undefined}
+            className={cn(
+              isActive("/dashboard") && "bg-muted font-medium text-foreground",
+            )}
+          >
             <LayoutDashboardIcon className="mr-2 size-4" />
             Dashboard
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/add-studio" />}>
+          <DropdownMenuItem
+            render={<Link href="/add-studio" />}
+            aria-current={isActive("/add-studio") ? "page" : undefined}
+            className={cn(
+              isActive("/add-studio") && "bg-muted font-medium text-foreground",
+            )}
+          >
             <PlusIcon className="mr-2 size-4" />
             Add New Studio
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/my-listings" />}>
+          <DropdownMenuItem
+            render={<Link href="/my-listings" />}
+            aria-current={isActive("/my-listings") ? "page" : undefined}
+            className={cn(
+              isActive("/my-listings") && "bg-muted font-medium text-foreground",
+            )}
+          >
             <ListIcon className="mr-2 size-4" />
             My Studio Listings
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/my-bookings" />}>
+          <DropdownMenuItem
+            render={<Link href="/my-bookings" />}
+            aria-current={isActive("/my-bookings") ? "page" : undefined}
+            className={cn(
+              isActive("/my-bookings") && "bg-muted font-medium text-foreground",
+            )}
+          >
             <CalendarDaysIcon className="mr-2 size-4" />
             My Bookings
           </DropdownMenuItem>

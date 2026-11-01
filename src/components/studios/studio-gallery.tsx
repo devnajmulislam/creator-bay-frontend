@@ -28,7 +28,6 @@ export function StudioGallery({ images }: StudioGalleryProps) {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync controlled embla state
     setCount(api.scrollSnapList().length)
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync controlled embla state
     setCurrent(api.selectedScrollSnap() + 1)
 
     api.on("select", () => {
