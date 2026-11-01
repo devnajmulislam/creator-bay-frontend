@@ -206,7 +206,7 @@ export default function MyListingsPage() {
 
                     <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/70 pt-4">
                       <Link
-                        href={`/my-studios/edit/${studio.id}`}
+                        href={`/studios/edit/${studio.id}`}
                         className={buttonVariants({
                           variant: "outline",
                           size: "sm",

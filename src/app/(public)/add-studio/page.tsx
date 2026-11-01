@@ -119,7 +119,7 @@ const user = session?.user;
         toast.success(
           `Studio "${formData.name || "New Studio"}" listed successfully!`,
         );
-        // router.push("/my-listings")
+        router.push("/my-listings")
         router.refresh();
       }, 700);
     }
