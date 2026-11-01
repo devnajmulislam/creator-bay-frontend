@@ -22,6 +22,8 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import { useSession } from "@/lib/auth-client";
+import { Spinner } from "@/components/ui/spinner";
 
 const PRESET_CATEGORIES = [
   "Photo Studio",
@@ -51,6 +53,22 @@ export default function AddStudioPage() {
     description: "",
   });
 
+
+
+const {data: session, isPending} = useSession()
+
+if(isPending){
+  return (
+    <div className="flex justify-center items-center h-[85vh]">
+      <Spinner className="h-20 w-20"/>
+    </div>
+  )
+}
+
+const user = session?.user;
+
+// console.log(user, "user")
+
   function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const val = e.target.value;
     if (val === "custom") {
@@ -62,8 +80,18 @@ export default function AddStudioPage() {
     }
   }
 
+
+
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (!user) {
+      toast.error("Please log in to list a studio");
+      router.push("/login?redirect=/add-studio");
+      return;
+    }
+
     setLoading(true);
     const finalCategory = isCustom ? customCategory : selectedCategory;
 
@@ -79,7 +107,7 @@ export default function AddStudioPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newStudioData),
+        body: JSON.stringify({...newStudioData, creatorEmail: user.email}),
       },
     );
 

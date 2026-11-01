@@ -114,6 +114,80 @@ export function getAllStudios(): Studio[] {
   return mockStudios
 }
 
+export interface StudioUpdatePayload {
+  name: string
+  category: string
+  location: string
+  pricePerHour: string
+  capacity: string
+  description: string
+}
+
+export async function getMyListings(email: string): Promise<Studio[]> {
+  const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(email)}`, {
+    cache: "no-store",
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to load listings (${res.status})`)
+  }
+
+  const data = await res.json()
+  const list = Array.isArray(data)
+    ? data
+    : data.listings || data.studios || data.data || []
+
+  return list.map((item: BackendStudioItem, index: number) =>
+    mapDbStudioToFrontend(item, index),
+  )
+}
+
+export async function deleteMyListing(id: string): Promise<boolean> {
+  const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to delete listing (${res.status})`)
+  }
+
+  const data = await res.json().catch(() => null)
+
+  if (data && typeof data.deletedCount === "number") {
+    return data.deletedCount > 0
+  }
+
+  return true
+}
+
+export async function updateMyListing(
+  id: string,
+  payload: StudioUpdatePayload,
+): Promise<boolean> {
+  const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to update listing (${res.status})`)
+  }
+
+  const data = await res.json().catch(() => null)
+
+  if (data && typeof data.modifiedCount === "number") {
+    return data.modifiedCount > 0 || data.matchedCount > 0
+  }
+
+  return true
+}
+
 function buildStudioGallery(studio: Studio): StudioImage[] {
   const pool = studioGalleryPools[studio.categorySlug] || studioGalleryPools["photography"]
   const supportingImages = pool

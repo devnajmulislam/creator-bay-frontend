@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { CalendarIcon } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import { CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -14,44 +14,58 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   NativeSelect,
   NativeSelectOption,
-} from "@/components/ui/native-select"
-import { Separator } from "@/components/ui/separator"
-import type { StudioDetail } from "@/types/studio"
+} from "@/components/ui/native-select";
+import { Separator } from "@/components/ui/separator";
+import type { StudioDetail } from "@/types/studio";
+import { useSession } from "@/lib/auth-client";
+import { Spinner } from "../ui/spinner";
 
-const durationOptions = [2, 3, 4, 6, 8] as const
+const durationOptions = [2, 3, 4, 6, 8] as const;
 
 interface BookingDialogProps {
-  studio: StudioDetail
+  studio: StudioDetail;
 }
 
 export function BookingDialog({ studio }: BookingDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [date, setDate] = useState("")
-  const [startTime, setStartTime] = useState("")
-  const [duration, setDuration] = useState(4)
-  const [guests, setGuests] = useState(2)
-  const [error, setError] = useState("")
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [duration, setDuration] = useState(4);
+  const [guests, setGuests] = useState(2);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const subtotal = studio.pricePerHour * duration
-  const total = subtotal + studio.securityDeposit
+  const { data: session, isPending } = useSession();
+
+  const subtotal = studio.pricePerHour * duration;
+  const total = subtotal + studio.securityDeposit;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!date || !startTime) {
-      setError("Choose a date and start time to continue.")
-      return
+      setError("Choose a date and start time to continue.");
+      return;
     }
 
-const studioBookingData = {
-      // studioId: studio.id,
+    if (!session?.user) {
+      setError("Please log in to request a booking.");
+      toast.error("Please log in to book this studio", {
+        description: "Bookings are linked to your account.",
+      });
+      return;
+    }
+
+    const studioBookingData = {
+      studioId: studio.id,
       studioName: studio.name,
+      studioLocation: studio.location,
       date,
       startTime,
       duration,
@@ -59,48 +73,60 @@ const studioBookingData = {
       subtotal,
       securityDeposit: studio.securityDeposit,
       total,
-    }
+      name: session.user.name,
+      email: session.user.email,
+      userEmail: session.user.email,
+      photo: session.user.image,
+      status: "Pending",
+    };
 
+    setIsSubmitting(true);
+    setError("");
 
- const result = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/studios/my-bookings`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    try {
+      const result = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/studios/my-bookings`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(studioBookingData),
         },
-        body: JSON.stringify(studioBookingData),
-      },
-    );
+      );
 
-    const data = await result.json();
+      if (!result.ok) {
+        throw new Error(`Failed to create booking (${result.status})`);
+      }
 
-    console.log(data)
+      setOpen(false);
+      toast.success("Booking request sent", {
+        description: `${studio.name} on ${date} at ${startTime}. Status: Pending host approval.`,
+      });
+    } catch (submitError) {
+      console.error("Failed to create booking:", submitError);
+      setError("Could not send your booking request. Please try again.");
+      toast.error("Could not send booking request");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
-    // console.log(studioBookingData, "bookingData")
-
-
-
-    setError("")
-    setOpen(false)
-    toast.success("Booking draft ready", {
-      description: `A demo request for ${studio.name} on ${date} at ${startTime}. No payment was taken.`,
-    })
+  if (isPending) {
+    return <Spinner />;
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
-        setOpen(nextOpen)
+        setOpen(nextOpen);
         if (!nextOpen) {
-          setError("")
+          setError("");
         }
       }}
     >
-      <DialogTrigger
-        render={<Button size="lg" className="h-11 w-full" />}
-      >
+      <DialogTrigger render={<Button size="lg" className="h-11 w-full" />}>
         <CalendarIcon />
         Book Workspace Now
       </DialogTrigger>
@@ -206,20 +232,43 @@ const studioBookingData = {
               {error}
             </p>
           ) : null}
+          {/* LOGGED IN user data */}
+          <div className="grid gap-2">
+            <Label htmlFor="booking-author">Author</Label>
+            <Input
+              id="booking-author"
+              type="text"
+              value={session?.user?.name}
+              readOnly
+              className="h-10"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="booking-email">Author Email</Label>
+            <Input
+              id="booking-email"
+              type="email"
+              value={session?.user?.email}
+              readOnly
+              className="h-10"
+            />
+          </div>
 
           <p className="text-xs leading-relaxed text-muted-foreground">
-            This is a frontend demo. No payment will be taken and no real
-            reservation is created.
+            Your reservation is saved as Pending until the host confirms it.
+            No payment is taken now.
           </p>
 
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>
               Cancel
             </DialogClose>
-            <Button type="submit">Request booking</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Sending request..." : "Request booking"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
