@@ -235,7 +235,6 @@ const user = session?.user;
               <div className="space-y-2">
                 <Label htmlFor="deposit">
                   Security deposit ($){" "}
-                  <span className="text-xs text-muted-foreground">(Opt.)</span>
                 </Label>
                 <div className="relative">
                   <DollarSignIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />

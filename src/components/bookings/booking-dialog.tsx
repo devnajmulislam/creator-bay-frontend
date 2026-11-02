@@ -102,17 +102,24 @@ export function BookingDialog({ studio }: BookingDialogProps) {
       );
 
       if (!result.ok) {
-        throw new Error(`Failed to create booking (${result.status})`);
+        const errorData = await result.json().catch(() => null)
+        throw new Error(errorData?.error || `Failed to create booking (${result.status})`)
       }
 
-      setOpen(false);
+      setOpen(false)
       toast.success("Booking request sent", {
         description: `${studio.name} on ${date} at ${startTime}. Status: Pending host approval.`,
-      });
-    } catch (submitError) {
-      console.error("Failed to create booking:", submitError);
-      setError("Could not send your booking request. Please try again.");
-      toast.error("Could not send booking request");
+      })
+    } catch (submitError: unknown) {
+      console.error("Failed to create booking:", submitError)
+      const errorMessage =
+        submitError instanceof Error
+          ? submitError.message
+          : "Could not send your booking request. Please try again."
+      setError(errorMessage)
+      toast.error("Could not send booking request", {
+        description: errorMessage,
+      })
     } finally {
       setIsSubmitting(false);
     }
