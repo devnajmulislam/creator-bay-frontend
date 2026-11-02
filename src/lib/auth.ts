@@ -23,12 +23,19 @@ export const auth = betterAuth({
   },
   trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
 
-  plugins: [jwt()],
+  plugins: [
+    jwt({
+      jwt: {
+        issuer: process.env.BETTER_AUTH_URL ? `${process.env.BETTER_AUTH_URL}/api/auth` : "http://localhost:3000/api/auth",
+        audience: "creator-bay-frontend",
+      },
+    }),
+  ],
   session: {
     cookieCache: {
       enabled: true,
       strategy: "jwt",
-      maxAge: 7 * 24 * 60 * 60 //7 days
+      maxAge: 7 * 24 * 60 * 60, //7 days
     },
   },
 });

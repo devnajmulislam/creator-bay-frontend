@@ -1,3 +1,4 @@
+import { getAuthToken } from "@/lib/auth-client"
 import type { Booking } from "@/types/booking"
 
 interface BackendBookingItem {
@@ -52,9 +53,17 @@ function mapDbBookingToFrontend(
 export async function getMyBookings(email: string): Promise<Booking[]> {
   const baseUrl =
     process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const token = await getAuthToken()
+  const headers: Record<string, string> = {
+    "Cache-Control": "no-store",
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
   const res = await fetch(
     `${baseUrl}/studios/my-bookings/${encodeURIComponent(email)}`,
-    { cache: "no-store" },
+    { headers, cache: "no-store" },
   )
 
   if (!res.ok) {
@@ -74,13 +83,19 @@ export async function getMyBookings(email: string): Promise<Booking[]> {
 export async function cancelBooking(id: string): Promise<boolean> {
   const baseUrl =
     process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const token = await getAuthToken()
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
   const res = await fetch(
     `${baseUrl}/studios/my-bookings/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({ status: "Cancelled" }),
     },
   )

@@ -22,7 +22,7 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
-import { useSession } from "@/lib/auth-client";
+import { useSession, getAuthToken } from "@/lib/auth-client";
 import { Spinner } from "@/components/ui/spinner";
 
 const PRESET_CATEGORIES = [
@@ -100,13 +100,19 @@ const user = session?.user;
       category: finalCategory,
     };
 
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const result = await fetch(
       `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/studios`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({...newStudioData, creatorEmail: user.email}),
       },
     );

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/native-select";
 import { Separator } from "@/components/ui/separator";
 import type { StudioDetail } from "@/types/studio";
-import { useSession } from "@/lib/auth-client";
+import { useSession, getAuthToken } from "@/lib/auth-client";
 import { Spinner } from "../ui/spinner";
 
 const durationOptions = [2, 3, 4, 6, 8] as const;
@@ -84,13 +84,19 @@ export function BookingDialog({ studio }: BookingDialogProps) {
     setError("");
 
     try {
+      const token = await getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const result = await fetch(
         `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/studios/my-bookings`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify(studioBookingData),
         },
       );

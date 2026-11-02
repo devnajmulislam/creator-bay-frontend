@@ -1,3 +1,4 @@
+import { getAuthToken } from "@/lib/auth-client"
 import { mockCategories } from "@/data/mock-categories"
 import { mockReviews } from "@/data/mock-reviews"
 import {
@@ -116,7 +117,16 @@ export interface StudioUpdatePayload {
 
 export async function getMyListings(email: string): Promise<Studio[]> {
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const token = await getAuthToken()
+  const headers: Record<string, string> = {
+    "Cache-Control": "no-store",
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
   const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(email)}`, {
+    headers,
     cache: "no-store",
   })
 
@@ -136,8 +146,15 @@ export async function getMyListings(email: string): Promise<Studio[]> {
 
 export async function deleteMyListing(id: string): Promise<boolean> {
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const token = await getAuthToken()
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
   const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(id)}`, {
     method: "DELETE",
+    headers,
   })
 
   if (!res.ok) {
@@ -158,11 +175,17 @@ export async function updateMyListing(
   payload: StudioUpdatePayload,
 ): Promise<boolean> {
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+  const token = await getAuthToken()
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
   const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(payload),
   })
 
