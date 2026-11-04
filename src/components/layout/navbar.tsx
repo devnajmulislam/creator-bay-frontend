@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowUpRightIcon,
   CalendarDaysIcon,
+  HeartIcon,
   LayoutDashboardIcon,
   ListIcon,
   LogOutIcon,
@@ -32,9 +33,15 @@ import {
 } from "@/components/ui/sheet";
 import { publicNavigation } from "@/lib/constants";
 
-function isActive(pathname: string, href: string) {
+function isActive(pathname: string, href: string, activeHash = "") {
   if (href === "/") {
     return pathname === "/";
+  }
+
+  const [basePath, hash] = href.split("#");
+
+  if (hash) {
+    return pathname === basePath && activeHash === `#${hash}`;
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -44,6 +51,7 @@ const mobileAccountLinks = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
   { label: "My listings", href: "/my-listings", icon: ListIcon },
   { label: "My bookings", href: "/my-bookings", icon: CalendarDaysIcon },
+  { label: "Saved studios", href: "/saved-studios", icon: HeartIcon },
 ] as const;
 
 export function Navbar() {
@@ -51,6 +59,17 @@ export function Navbar() {
   const router = useRouter();
   const { user, isReady, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeHash, setActiveHash] = useState("");
+
+  useEffect(() => {
+    function syncHash() {
+      setActiveHash(window.location.hash);
+    }
+
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, [pathname]);
 
   function closeMobile() {
     setMobileOpen(false);
@@ -75,7 +94,7 @@ export function Navbar() {
           className="hidden items-center gap-1 lg:flex"
         >
           {publicNavigation.map((item) => {
-            const active = isActive(pathname, item.href);
+            const active = isActive(pathname, item.href, activeHash);
 
             return (
               <Link
@@ -146,7 +165,7 @@ export function Navbar() {
               <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
                 <nav aria-label="Mobile navigation" className="grid gap-0.5">
                   {publicNavigation.map((item) => {
-                    const active = isActive(pathname, item.href);
+                    const active = isActive(pathname, item.href, activeHash);
 
                     return (
                       <Link
@@ -184,7 +203,7 @@ export function Navbar() {
                       </p>
                     </div>
                     {mobileAccountLinks.map((item) => {
-                      const active = isActive(pathname, item.href);
+                      const active = isActive(pathname, item.href, activeHash);
 
                       return (
                         <Link

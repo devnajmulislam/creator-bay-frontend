@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { useEffect, useRef, useState, use } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -8,19 +9,28 @@ import {
   Building2Icon,
   BuildingIcon,
   DollarSignIcon,
+  ImageIcon,
+  MailIcon,
   MapPinIcon,
+  ShieldCheckIcon,
+  UploadIcon,
+  UserIcon,
   UsersIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Container, Section } from "@/components/shared/container"
 import { EmptyState } from "@/components/shared/empty-state"
+import { AmenityPicker } from "@/components/studios/amenity-picker"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
+import { useSession } from "@/lib/auth-client"
+import { uploadImageToImgbb } from "@/lib/image-upload"
 import {
+  getStudioById,
   updateMyListing,
   type StudioUpdatePayload,
 } from "@/services/studio-service"
@@ -34,48 +44,49 @@ const EMPTY_FORM: StudioUpdatePayload = {
   category: "",
   location: "",
   pricePerHour: "",
+  securityDeposit: "",
   capacity: "",
+  image: "",
   description: "",
+  overview: "",
+  amenities: [],
 }
 
 export default function EditStudioPage({ params }: EditStudioPageProps) {
   const { id } = use(params)
   const router = useRouter()
+  const { data: session } = useSession()
+  const user = session?.user
   const [formData, setFormData] = useState<StudioUpdatePayload>(EMPTY_FORM)
   const [loading, setLoading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadStudio() {
       try {
-        const baseUrl =
-          process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-        const res = await fetch(`${baseUrl}/studios/${id}`, {
-          cache: "no-store",
-        })
+        const studio = await getStudioById(id)
 
-        if (!res.ok) {
-          throw new Error(`Failed to load studio (${res.status})`)
-        }
-
-        const data = await res.json()
-        const item = data.studio || data.data || data
-
-        if (!item || (!item._id && !item.name)) {
+        if (!studio) {
           throw new Error("Studio not found")
         }
 
         if (!cancelled) {
           setFormData({
-            name: String(item.name ?? ""),
-            category: String(item.category ?? ""),
-            location: String(item.location ?? ""),
-            pricePerHour: String(item.pricePerHour ?? ""),
-            capacity: String(item.capacity ?? ""),
-            description: String(item.description ?? ""),
+            name: studio.name,
+            category: studio.category,
+            location: studio.location,
+            pricePerHour: String(studio.pricePerHour),
+            securityDeposit: String(studio.securityDeposit),
+            capacity: String(studio.capacity),
+            image: studio.image,
+            description: studio.description,
+            overview: studio.overview,
+            amenities: studio.amenities,
           })
         }
       } catch (error) {
@@ -98,19 +109,49 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
     }
   }, [id])
 
+  async function handleImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+
+    if (!file) return
+
+    setUploadingImage(true)
+
+    try {
+      const imageUrl = await uploadImageToImgbb(file)
+      setFormData((current) => ({ ...current, image: imageUrl }))
+      toast.success("Studio image updated")
+    } catch (error) {
+      toast.error("Image upload failed", {
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      })
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
 
     try {
-      await updateMyListing(id, formData)
+      const updated = await updateMyListing(id, formData)
+
+      if (!updated) {
+        throw new Error("The studio listing was not updated.")
+      }
+
       toast.success("Studio listing updated successfully!")
       router.push("/my-listings")
       router.refresh()
     } catch (error) {
       console.error("Failed to update studio listing:", error)
       toast.error("Could not update studio", {
-        description: "Please try again in a moment.",
+        description:
+          error instanceof Error ? error.message : "Please try again in a moment.",
       })
     } finally {
       setLoading(false)
@@ -206,7 +247,7 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
               </div>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="price">Price per hour ($)</Label>
                 <div className="relative">
@@ -220,6 +261,25 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
                     }
                     className="pl-9"
                     required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deposit">Security deposit ($)</Label>
+                <div className="relative">
+                  <ShieldCheckIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Input
+                    id="deposit"
+                    type="number"
+                    value={formData.securityDeposit}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        securityDeposit: e.target.value,
+                      })
+                    }
+                    className="pl-9"
                   />
                 </div>
               </div>
@@ -243,16 +303,121 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="image">Studio image</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <ImageIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Input
+                    id="image"
+                    type="url"
+                    value={formData.image}
+                    onChange={(e) =>
+                      setFormData({ ...formData, image: e.target.value })
+                    }
+                    className="pl-9"
+                    required
+                  />
+                </div>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleImageUpload}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  <UploadIcon className="size-4" />
+                  {uploadingImage ? "Uploading..." : "Upload"}
+                </Button>
+              </div>
+              {formData.image ? (
+                <div className="relative mt-2 aspect-[16/9] w-full overflow-hidden rounded-lg border border-border/80 bg-muted">
+                  <Image
+                    src={formData.image}
+                    alt="Studio preview"
+                    fill
+                    unoptimized
+                    sizes="(min-width: 640px) 50vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Amenities</Label>
+              <AmenityPicker
+                value={formData.amenities ?? []}
+                onChange={(amenities) =>
+                  setFormData({ ...formData, amenities })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Short description</Label>
               <Textarea
                 id="description"
-                rows={5}
+                rows={3}
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="overview">Detailed overview</Label>
+              <Textarea
+                id="overview"
+                rows={5}
+                value={formData.overview}
+                onChange={(e) =>
+                  setFormData({ ...formData, overview: e.target.value })
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-4 rounded-xl border border-border/80 bg-muted/30 p-4">
+              <div>
+                <p className="text-sm font-medium">Host information</p>
+                <p className="text-xs text-muted-foreground">
+                  This is linked to your account and cannot be edited here.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="host-name">Host name</Label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                    <Input
+                      id="host-name"
+                      value={user?.name ?? ""}
+                      readOnly
+                      className="pl-9 bg-muted/60"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="host-email">Host email</Label>
+                  <div className="relative">
+                    <MailIcon className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                    <Input
+                      id="host-email"
+                      value={user?.email ?? ""}
+                      readOnly
+                      className="pl-9 bg-muted/60"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

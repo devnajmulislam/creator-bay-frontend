@@ -25,6 +25,11 @@ function getRedirectTarget() {
   return target;
 }
 
+function getLoginHref() {
+  const target = getRedirectTarget();
+  return target === "/" ? "/login" : `/login?redirect=${encodeURIComponent(target)}`;
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -74,7 +79,7 @@ export default function RegisterPage() {
     toast.success("Account created successfully!", {
       description: "Please log in to continue.",
     });
-    router.push("/login");
+    router.push(getLoginHref());
   }
 
   async function handleGoogleSignIn() {
@@ -206,6 +211,10 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <Link
               href="/login"
+              onClick={(event) => {
+                event.preventDefault();
+                router.push(getLoginHref());
+              }}
               className="font-medium text-primary hover:underline"
             >
               Log in

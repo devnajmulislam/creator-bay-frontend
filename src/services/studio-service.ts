@@ -1,4 +1,3 @@
-import { getAuthToken } from "@/lib/auth-client"
 import { mockCategories } from "@/data/mock-categories"
 import { mockReviews } from "@/data/mock-reviews"
 import {
@@ -25,51 +24,96 @@ interface BackendStudioItem {
   image?: string
   reviewCount?: string | number
   description?: string
+  overview?: string
   category?: string
+  amenities?: string[] | string
+  creatorEmail?: string
+  creatorName?: string
+  rating?: string | number
+  createdAt?: string
+}
+
+const DEFAULT_AMENITIES = [
+  "High-speed Wi-Fi",
+  "Professional Lighting",
+  "Sound System",
+  "Air Conditioning",
+]
+
+function normalizeAmenities(value: BackendStudioItem["amenities"]): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean)
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+
+  return DEFAULT_AMENITIES
+}
+
+function getItemId(item: BackendStudioItem, fallback: string): string {
+  const rawId = item._id
+
+  if (typeof rawId === "object" && rawId !== null && "$oid" in rawId) {
+    return String(rawId.$oid ?? fallback)
+  }
+
+  if (typeof rawId === "string" && rawId) {
+    return rawId
+  }
+
+  return fallback
 }
 
 function mapDbStudioToFrontend(item: BackendStudioItem, index: number): Studio {
-  const rawId = item._id
-  const id = typeof rawId === "object" && rawId !== null && "$oid" in rawId
-    ? rawId.$oid
-    : typeof rawId === "string"
-    ? rawId
-    : `studio-${index + 1}`
-
+  const id = getItemId(item, `studio-${index + 1}`)
   const categoryName = item.category || "Photo Studio"
   const categorySlug = getStudioCategorySlug(categoryName)
 
   return {
-    id: String(id),
-    slug: String(id),
+    id,
+    slug: id,
     name: item.name || "Creative Studio",
     category: categoryName,
     categorySlug,
     description: item.description || "Professional creative workspace equipped with top-tier gear.",
     location: item.location || "New York, NY",
     pricePerHour: Number(item.pricePerHour) || 150,
-    rating: 4.8,
+    rating: Number(item.rating) || 4.8,
     reviewCount: Number(item.reviewCount) || 12,
     capacity: Number(item.capacity) || 10,
     image: item.image || "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1200&auto=format&fit=crop",
     imageAlt: item.name || "Studio workspace",
-    amenities: ["High-speed Wi-Fi", "Professional Lighting", "Sound System", "Air Conditioning"],
+    amenities: normalizeAmenities(item.amenities),
     featured: index < 6,
     instantBook: true,
   }
 }
 
-export async function fetchStudiosFromServer(): Promise<Studio[]> {
+export async function fetchStudiosFromServer(params?: {
+  limit?: number
+  sort?: string
+}): Promise<Studio[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-    const studiosRes = await fetch(`${baseUrl}/studios`, {
-      cache: "no-store",
-    })
+    const query = new URLSearchParams()
+    if (params?.limit) query.set("limit", String(params.limit))
+    if (params?.sort) query.set("sort", params.sort)
+    const queryString = query.toString()
+    const studiosRes = await fetch(
+      `${baseUrl}/studios${queryString ? `?${queryString}` : ""}`,
+      {
+        cache: "no-store",
+      },
+    )
     if (!studiosRes.ok) {
       return mockStudios
     }
     const studiosData = await studiosRes.json()
-    // console.log("Fetched studiosData:", studiosData)
     const list = Array.isArray(studiosData)
       ? studiosData
       : studiosData.studios || studiosData.data || []
@@ -84,8 +128,16 @@ export async function fetchStudiosFromServer(): Promise<Studio[]> {
 }
 
 export async function getFeaturedStudios(limit = 6): Promise<Studio[]> {
-  const studios = await fetchStudiosFromServer()
-  return studios.filter((studio) => studio.featured).slice(0, limit)
+  const studios = await fetchStudiosFromServer({ limit, sort: "rating" })
+
+  return studios
+    .sort(
+      (a, b) =>
+        b.rating - a.rating ||
+        b.reviewCount - a.reviewCount ||
+        a.name.localeCompare(b.name),
+    )
+    .slice(0, limit)
 }
 
 export async function getStudioCategories(): Promise<StudioCategory[]> {
@@ -106,27 +158,62 @@ export function getAllStudios(): Studio[] {
   return mockStudios
 }
 
+export interface StudioCreatePayload {
+  name: string
+  category: string
+  location: string
+  pricePerHour: string
+  securityDeposit: string
+  capacity: string
+  image: string
+  reviewCount: string
+  description: string
+  overview: string
+  amenities: string[]
+  creatorName: string
+  creatorEmail: string
+}
+
 export interface StudioUpdatePayload {
   name: string
   category: string
   location: string
   pricePerHour: string
+  securityDeposit?: string
   capacity: string
+  image?: string
   description: string
+  overview?: string
+  amenities?: string[]
+}
+
+export async function createStudio(
+  payload: StudioCreatePayload,
+): Promise<boolean> {
+  const res = await fetch("/api/backend/studios", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null)
+    throw new Error(
+      errorData?.error || errorData?.message || `Failed to create studio (${res.status})`,
+    )
+  }
+
+  const data = await res.json().catch(() => null)
+
+  return Boolean(data?.acknowledged || data?.insertedId)
 }
 
 export async function getMyListings(email: string): Promise<Studio[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-  const token = await getAuthToken()
-  const headers: Record<string, string> = {
-    "Cache-Control": "no-store",
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(email)}`, {
-    headers,
+  const res = await fetch(`/api/backend/my-listings/${encodeURIComponent(email)}`, {
+    credentials: "include",
     cache: "no-store",
   })
 
@@ -145,16 +232,9 @@ export async function getMyListings(email: string): Promise<Studio[]> {
 }
 
 export async function deleteMyListing(id: string): Promise<boolean> {
-  const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-  const token = await getAuthToken()
-  const headers: Record<string, string> = {}
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(id)}`, {
+  const res = await fetch(`/api/backend/my-listings/${encodeURIComponent(id)}`, {
     method: "DELETE",
-    headers,
+    credentials: "include",
   })
 
   if (!res.ok) {
@@ -174,18 +254,12 @@ export async function updateMyListing(
   id: string,
   payload: StudioUpdatePayload,
 ): Promise<boolean> {
-  const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-  const token = await getAuthToken()
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  const res = await fetch(`${baseUrl}/my-listings/${encodeURIComponent(id)}`, {
+  const res = await fetch(`/api/backend/my-listings/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    headers,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(payload),
   })
 
@@ -214,57 +288,102 @@ function buildStudioGallery(studio: Studio): StudioImage[] {
   ]
 }
 
+async function fetchStudioByIdFromServer(
+  id: string,
+): Promise<BackendStudioItem | null> {
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
+    const res = await fetch(`${baseUrl}/studios/${encodeURIComponent(id)}`, {
+      cache: "no-store",
+    })
+
+    if (!res.ok) {
+      return null
+    }
+
+    const data = await res.json()
+    const item = data?.studio || data?.data || data
+
+    if (!item || (!item._id && !item.name)) {
+      return null
+    }
+
+    return item as BackendStudioItem
+  } catch {
+    return null
+  }
+}
+
+function mapDbItemToDetail(
+  item: BackendStudioItem,
+  fallbackId: string,
+): StudioDetail {
+  const studio = mapDbStudioToFrontend(item, 0)
+  const hostName = item.creatorName?.trim() || "Studio Host"
+  const hostedSince = item.createdAt
+    ? new Date(item.createdAt).getFullYear()
+    : 2021
+  const initials =
+    hostName
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "SH"
+
+  return {
+    ...studio,
+    id: getItemId(item, fallbackId),
+    slug: getItemId(item, fallbackId),
+    overview: item.overview?.trim() || studio.description,
+    securityDeposit: Number(item.securityDeposit) || 150,
+    gallery: buildStudioGallery(studio),
+    host: {
+      name: hostName,
+      initials,
+      role: "Professional Host",
+      bio: `Experienced creative space host welcoming photographers, filmmakers, podcasters, and musicians.`,
+      responseTime: "within an hour",
+      hostedSince: Number.isFinite(hostedSince) ? hostedSince : 2021,
+      listingCount: 1,
+      verified: true,
+    },
+  }
+}
+
 export async function getStudioById(
   id: string,
 ): Promise<StudioDetail | null> {
-  const studios = await fetchStudiosFromServer()
-  const studio = studios.find(
-    (item) => item.id === id || item.slug === id,
-  )
+  const backendStudio = await fetchStudioByIdFromServer(id)
 
-  if (!studio) {
-    const mock = mockStudios.find((item) => item.id === id || item.slug === id)
-    if (!mock) return null
-    const details = mockStudioDetails[mock.id] || {
-      overview: mock.description,
-      securityDeposit: 100,
-      host: {
-        name: "Studio Host",
-        initials: "SH",
-        role: "Professional Host",
-        bio: "Dedicated studio space owner.",
-        responseTime: "within an hour",
-        hostedSince: 2022,
-        listingCount: 2,
-        verified: true,
-      },
-    }
-    return {
-      ...mock,
-      ...details,
-      gallery: buildStudioGallery(mock),
-    }
+  if (backendStudio) {
+    return mapDbItemToDetail(backendStudio, id)
   }
 
-  const details = mockStudioDetails[studio.id] || {
-    overview: studio.description,
-    securityDeposit: 150,
+  const mock = mockStudios.find((item) => item.id === id || item.slug === id)
+  if (!mock) return null
+
+  const details = mockStudioDetails[mock.id] || {
+    overview: mock.description,
+    securityDeposit: 100,
     host: {
-      name: studio.name,
-      initials: studio.name.split(" ").map((n) => n[0]).join("").slice(0, 2),
-      role: "Studio Host",
-      bio: "Professional creative studio space.",
+      name: "Studio Host",
+      initials: "SH",
+      role: "Professional Host",
+      bio: "Dedicated studio space owner.",
       responseTime: "within an hour",
-      hostedSince: 2021,
-      listingCount: 1,
+      hostedSince: 2022,
+      listingCount: 2,
       verified: true,
     },
   }
 
   return {
-    ...studio,
+    ...mock,
     ...details,
-    gallery: buildStudioGallery(studio),
+    gallery: buildStudioGallery(mock),
   }
 }
 

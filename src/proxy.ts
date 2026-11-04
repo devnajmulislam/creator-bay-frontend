@@ -12,7 +12,10 @@ export async function proxy(request: NextRequest) {
   });
 
   if (!session?.user) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    const intendedRoute = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    loginUrl.searchParams.set("redirect", intendedRoute);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
@@ -20,9 +23,11 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/dashboard/:path*",
     "/add-studio/:path*",
     "/my-listings/:path*",
     "/studios/edit/:path*",
     "/my-bookings/:path*",
+    "/saved-studios/:path*",
   ],
 };

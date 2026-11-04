@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,7 +24,8 @@ import {
 } from "@/components/ui/native-select";
 import { Separator } from "@/components/ui/separator";
 import type { StudioDetail } from "@/types/studio";
-import { useSession, getAuthToken } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
+import { createBooking } from "@/services/booking-service";
 import { Spinner } from "../ui/spinner";
 
 const durationOptions = [2, 3, 4, 6, 8] as const;
@@ -33,6 +35,8 @@ interface BookingDialogProps {
 }
 
 export function BookingDialog({ studio }: BookingDialogProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -55,10 +59,13 @@ export function BookingDialog({ studio }: BookingDialogProps) {
     }
 
     if (!session?.user) {
-      setError("Please log in to request a booking.");
-      toast.error("Please log in to book this studio", {
-        description: "Bookings are linked to your account.",
+      const redirectPath = pathname || "/studios";
+
+      setOpen(false);
+      toast.info("Please log in to continue", {
+        description: "You will return to this studio after logging in.",
       });
+      router.push(`/login?redirect=${encodeURIComponent(redirectPath)}`);
       return;
     }
 
@@ -76,7 +83,7 @@ export function BookingDialog({ studio }: BookingDialogProps) {
       name: session.user.name,
       email: session.user.email,
       userEmail: session.user.email,
-      photo: session.user.image,
+      photo: session.user.image ?? undefined,
       status: "Pending",
     };
 
@@ -84,32 +91,13 @@ export function BookingDialog({ studio }: BookingDialogProps) {
     setError("");
 
     try {
-      const token = await getAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const result = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/studios/my-bookings`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify(studioBookingData),
-        },
-      );
-
-      if (!result.ok) {
-        const errorData = await result.json().catch(() => null)
-        throw new Error(errorData?.error || `Failed to create booking (${result.status})`)
-      }
+      await createBooking(studioBookingData);
 
       setOpen(false)
       toast.success("Booking request sent", {
         description: `${studio.name} on ${date} at ${startTime}. Status: Pending host approval.`,
       })
+      router.push("/my-bookings")
     } catch (submitError: unknown) {
       console.error("Failed to create booking:", submitError)
       const errorMessage =

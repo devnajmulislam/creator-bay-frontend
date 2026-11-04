@@ -1,3 +1,4 @@
+import { AboutSection } from "@/components/home/about-section"
 import { BookingStepsSection } from "@/components/home/booking-steps-section"
 import { CategorySection } from "@/components/home/category-section"
 import { FeaturedStudiosSection } from "@/components/home/featured-studios-section"
@@ -15,6 +16,7 @@ export default function HomePage() {
       <FeaturedStudiosSection />
       <CategorySection />
       <BookingStepsSection />
+      <AboutSection />
       <HostGuaranteeSection />
       <FinalCtaSection />
     </>

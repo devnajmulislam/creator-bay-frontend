@@ -5,9 +5,9 @@ import {
   MapPinIcon,
   StarIcon,
   UsersIcon,
-  ZapIcon,
 } from "lucide-react"
 
+import { SavedStudioButton } from "@/components/studios/saved-studio-button"
 import { Badge } from "@/components/ui/badge"
 import type { Studio } from "@/types/studio"
 
@@ -17,11 +17,14 @@ interface StudioCardProps {
 
 export function StudioCard({ studio }: StudioCardProps) {
   return (
-    <Link
-      href={`/studios/${studio.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-xl border border-border/80 bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg hover:shadow-foreground/5 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/80 bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg hover:shadow-foreground/5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40">
+      <Link
+        href={`/studios/${studio.id}`}
+        aria-label={`View details for ${studio.name}`}
+        className="absolute inset-0 z-10 focus-visible:outline-none"
+      />
+
+      <div className="pointer-events-none relative aspect-[4/3] overflow-hidden bg-muted">
         <Image
           src={studio.image}
           alt={studio.imageAlt}
@@ -46,7 +49,7 @@ export function StudioCard({ studio }: StudioCardProps) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 p-5">
+      <div className="pointer-events-none flex flex-1 flex-col gap-4 p-5">
         <div>
           <div className="flex items-start justify-between gap-3">
             <h3 className="font-heading text-xl leading-snug">
@@ -72,12 +75,19 @@ export function StudioCard({ studio }: StudioCardProps) {
             <UsersIcon className="size-3.5" />
             Up to {studio.capacity} people
           </span>
-          <span className="inline-flex items-center gap-1 font-medium text-foreground">
-            View Details
-            <ArrowUpRightIcon className="size-3.5" />
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 font-medium text-foreground">
+              View Details
+              <ArrowUpRightIcon className="size-3.5" />
+            </span>
+            <SavedStudioButton
+              studioId={studio.id}
+              studioName={studio.name}
+              className="size-7"
+            />
+          </div>
         </div>
       </div>
-    </Link>
+    </article>
   )
 }

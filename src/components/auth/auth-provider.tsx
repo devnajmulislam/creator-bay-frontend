@@ -1,6 +1,11 @@
 "use client"
 
-import { createContext, useContext, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  type ReactNode,
+} from "react"
 
 import { authClient, useSession } from "@/lib/auth-client"
 import type { User } from "@/types/user"
@@ -16,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, isPending, refetch } = useSession()
   const sessionUser = data?.user
+  const sessionUserId = sessionUser?.id
 
   const user: User | null = sessionUser
     ? {
@@ -27,8 +33,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     : null
 
+  useEffect(() => {
+    if (!sessionUserId) return
+
+    fetch("/api/auth-jwt", { credentials: "include" }).catch(() => undefined)
+  }, [sessionUserId])
+
   async function signOut() {
     await authClient.signOut()
+    await fetch("/api/auth-jwt", {
+      method: "DELETE",
+      credentials: "include",
+    }).catch(() => undefined)
     await refetch()
   }
 

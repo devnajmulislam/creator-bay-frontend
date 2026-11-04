@@ -19,9 +19,9 @@ import {
 } from "@/components/ui/native-select"
 import {
   getAllStudios,
+  getAllStudiosAsync,
   getStudioCategoryOptions,
 } from "@/services/studio-service"
-import { getStudioCategorySlug } from "@/lib/studio-category"
 import type {
   Studio,
   StudioCategorySlug,
@@ -125,51 +125,17 @@ export function StudioExplorer() {
   useEffect(() => {
     async function loadStudios() {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-        const res = await fetch(`${baseUrl}/studios`, { cache: "no-store" })
-        if (res.ok) {
-          const data = await res.json()
-          const list = Array.isArray(data) ? data : data.studios || data.data || []
-          if (list.length > 0) {
-            const mapped: Studio[] = list.map((item: Record<string, unknown>, index: number) => {
-              const rawId = item._id
-              const id = typeof rawId === "object" && rawId !== null && "$oid" in rawId
-                ? (rawId as { $oid?: string }).$oid
-                : typeof rawId === "string"
-                ? rawId
-                : `studio-${index + 1}`
+        const studios = await getAllStudiosAsync()
+        setStudios(studios)
 
-              const categoryName = typeof item.category === "string" ? item.category : "Photo Studio"
-              const categorySlug = getStudioCategorySlug(categoryName)
-
-              return {
-                id: String(id),
-                slug: String(id),
-                name: typeof item.name === "string" ? item.name : "Creative Studio",
-                category: categoryName,
-                categorySlug,
-                description: typeof item.description === "string" ? item.description : "Professional creative workspace equipped with top-tier gear.",
-                location: typeof item.location === "string" ? item.location : "New York, NY",
-                pricePerHour: Number(item.pricePerHour) || 150,
-                rating: 4.8,
-                reviewCount: Number(item.reviewCount) || 12,
-                capacity: Number(item.capacity) || 10,
-                image: typeof item.image === "string" ? item.image : "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1200&auto=format&fit=crop",
-                imageAlt: typeof item.name === "string" ? item.name : "Studio workspace",
-                amenities: ["High-speed Wi-Fi", "Professional Lighting", "Sound System", "Air Conditioning"],
-                featured: index < 6,
-                instantBook: true,
-              }
-            })
-            setStudios(mapped)
-            const prices = mapped.map((s) => s.pricePerHour)
-            const newMin = Math.floor(Math.min(...prices) / 10) * 10
-            const newMax = Math.ceil(Math.max(...prices) / 10) * 10
-            setPriceRange([newMin, newMax])
-          }
+        if (studios.length > 0) {
+          const prices = studios.map((studio) => studio.pricePerHour)
+          const newMin = Math.floor(Math.min(...prices) / 10) * 10
+          const newMax = Math.ceil(Math.max(...prices) / 10) * 10
+          setPriceRange([newMin, newMax])
         }
       } catch (err) {
-        console.warn("Could not fetch studios on client, using default", err)
+        console.warn("Could not fetch studios, using default", err)
       } finally {
         setIsLoading(false)
       }

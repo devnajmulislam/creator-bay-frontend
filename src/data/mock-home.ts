@@ -1,4 +1,5 @@
 import type {
+  AboutValue,
   BookingStep,
   HeroSlide,
   HomeCtaContent,
@@ -49,7 +50,7 @@ export const heroSlides: HeroSlide[] = [
       label: "Find a sound space",
       href: "/studios?category=music",
     },
-    secondaryCta: { label: "Meet the hosts", href: "/about" },
+    secondaryCta: { label: "Meet the hosts", href: "/#about" },
   },
 ]
 
@@ -102,6 +103,27 @@ export const hostGuarantees: HostGuarantee[] = [
     description:
       "Creators and hosts get direct help from people who understand production.",
     icon: "support",
+  },
+]
+
+export const aboutValues: AboutValue[] = [
+  {
+    title: "Curated Spaces",
+    description:
+      "Every studio on CreatorBay is verified for professional acoustics, lighting, equipment, and creative atmosphere.",
+    icon: "sparkles",
+  },
+  {
+    title: "Secure Bookings",
+    description:
+      "Transparent pricing, instant or host-approved booking flows, and robust protection policies for hosts and guests.",
+    icon: "shield",
+  },
+  {
+    title: "Creator Community",
+    description:
+      "Connecting independent artists with local space owners to foster collaboration and creative independence.",
+    icon: "users",
   },
 ]
 

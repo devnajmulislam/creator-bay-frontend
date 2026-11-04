@@ -1,4 +1,3 @@
-import { getAuthToken } from "@/lib/auth-client"
 import type { Booking } from "@/types/booking"
 
 interface BackendBookingItem {
@@ -50,20 +49,48 @@ function mapDbBookingToFrontend(
   }
 }
 
-export async function getMyBookings(email: string): Promise<Booking[]> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-  const token = await getAuthToken()
-  const headers: Record<string, string> = {
-    "Cache-Control": "no-store",
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
+export interface CreateBookingPayload {
+  studioId: string
+  studioName: string
+  studioLocation: string
+  date: string
+  startTime: string
+  duration: number
+  guests: number
+  subtotal: number
+  securityDeposit: number
+  total: number
+  name: string
+  email: string
+  userEmail: string
+  photo?: string
+  status: string
+}
 
+export async function createBooking(
+  payload: CreateBookingPayload,
+): Promise<void> {
+  const res = await fetch("/api/backend/studios/my-bookings", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null)
+    throw new Error(
+      errorData?.error || `Failed to create booking (${res.status})`,
+    )
+  }
+}
+
+export async function getMyBookings(email: string): Promise<Booking[]> {
   const res = await fetch(
-    `${baseUrl}/studios/my-bookings/${encodeURIComponent(email)}`,
-    { headers, cache: "no-store" },
+    `/api/backend/studios/my-bookings/${encodeURIComponent(email)}`,
+    { credentials: "include", cache: "no-store" },
   )
 
   if (!res.ok) {
@@ -81,21 +108,14 @@ export async function getMyBookings(email: string): Promise<Booking[]> {
 }
 
 export async function cancelBooking(id: string): Promise<boolean> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000"
-  const token = await getAuthToken()
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
   const res = await fetch(
-    `${baseUrl}/studios/my-bookings/${encodeURIComponent(id)}`,
+    `/api/backend/studios/my-bookings/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
-      headers,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ status: "Cancelled" }),
     },
   )

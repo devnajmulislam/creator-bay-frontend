@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Container, Section } from "@/components/shared/container"
 import { EmptyState } from "@/components/shared/empty-state"
+import { DownloadInvoiceButton } from "@/components/bookings/download-invoice-button"
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -262,6 +263,11 @@ export default function MyBookingsPage() {
 
                     <div className="flex items-center justify-between gap-4 border-t border-border/70 pt-4 sm:border-t-0 sm:pt-0 sm:flex-col sm:items-end">
                       <div className="font-heading text-2xl">${booking.total}</div>
+                      
+                      {booking.status.toLowerCase() !== "cancelled" ? (
+                        <DownloadInvoiceButton booking={booking} />
+                      ) : null}
+
                       {isPendingBooking ? (
                         <Button
                           variant="outline"

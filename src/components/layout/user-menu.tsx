@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDaysIcon,
+  HeartIcon,
   LayoutDashboardIcon,
   ListIcon,
   LogOutIcon,
@@ -124,6 +125,17 @@ export function UserMenu({ user }: UserMenuProps) {
           >
             <CalendarDaysIcon className="mr-2 size-4" />
             My Bookings
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            render={<Link href="/saved-studios" />}
+            aria-current={isActive("/saved-studios") ? "page" : undefined}
+            className={cn(
+              isActive("/saved-studios") &&
+                "bg-muted font-medium text-foreground",
+            )}
+          >
+            <HeartIcon className="mr-2 size-4" />
+            Saved Studios
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

@@ -1,10 +1,12 @@
 import {
+  aboutValues,
   bookingSteps,
   finalCta,
   heroSlides,
   hostGuarantees,
 } from "@/data/mock-home"
 import type {
+  AboutValue,
   BookingStep,
   HeroSlide,
   HomeCtaContent,
@@ -21,6 +23,10 @@ export function getBookingSteps(): BookingStep[] {
 
 export function getHostGuarantees(): HostGuarantee[] {
   return hostGuarantees
+}
+
+export function getAboutValues(): AboutValue[] {
+  return aboutValues
 }
 
 export function getFinalCta(): HomeCtaContent {

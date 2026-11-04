@@ -44,6 +44,10 @@ export default function LoginPage() {
       return;
     }
 
+    await fetch("/api/auth-jwt", { credentials: "include" }).catch(
+      () => undefined,
+    );
+
     toast.success("Logged in successfully!");
     router.push(getRedirectTarget());
     router.refresh();
@@ -138,6 +142,15 @@ export default function LoginPage() {
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
+              onClick={(event) => {
+                event.preventDefault();
+                const target = getRedirectTarget();
+                router.push(
+                  target === "/"
+                    ? "/register"
+                    : `/register?redirect=${encodeURIComponent(target)}`,
+                );
+              }}
               className="font-medium text-primary hover:underline"
             >
               Create account

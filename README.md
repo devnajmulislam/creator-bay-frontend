@@ -12,7 +12,8 @@ CreatorBay is a modern, premium peer-to-peer marketplace connecting independent 
 - **Immersive Studio Details:** Comprehensive studio showcase pages featuring high-resolution photo galleries, equipment specs, detailed host bios, and verified client reviews.
 - **Interactive Booking Flow:** Seamless reservation system with live date/time selection, guest capacity limits, automatic subtotal/deposit calculations, and booking management via "My Bookings".
 - **Host Publishing & Listing Management:** Dedicated host onboarding interface ("Add Studio") and listing management dashboard ("My Listings") to publish, update, and manage creative spaces.
-- **Secure JWT Authentication & HTTPOnly Cookies:** Robust Better Auth integration supporting email/password authentication with strict password validation criteria, Google Social Login, and JWT security.
+- **Secure JWT Authentication & HTTPOnly Cookies:** Robust Better Auth integration supporting email/password authentication with strict password validation criteria, Google Social Login, and JWT security. Authenticated API mutations are proxied through Next.js so the JWT stays inside an HTTPOnly cookie.
+- **Saved Studios Wishlist:** Signed-in creators can heart any studio and revisit saved spaces from their account menu.
 
 ---
 
@@ -44,6 +45,7 @@ CreatorBay is a modern, premium peer-to-peer marketplace connecting independent 
    Create a `.env` file in the root directory with the following variables:
    ```env
    NEXT_PUBLIC_SERVER_BASE_URL=http://localhost:5000
+   NEXT_PUBLIC_IMGBB_API_KEY=your-imgbb-api-key
    BETTER_AUTH_SECRET=your-better-auth-secret
    BETTER_AUTH_URL=http://localhost:3000
    MONGO_URI=your-mongodb-connection-string

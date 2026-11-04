@@ -37,6 +37,14 @@ export interface HostGuarantee {
   icon: HostGuaranteeIcon
 }
 
+export type AboutValueIcon = "sparkles" | "shield" | "users"
+
+export interface AboutValue {
+  title: string
+  description: string
+  icon: AboutValueIcon
+}
+
 export interface HomeCtaContent {
   eyebrow: string
   title: string

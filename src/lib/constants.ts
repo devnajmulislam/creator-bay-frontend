@@ -8,7 +8,7 @@ export const publicNavigation = [
   { label: "Home", href: "/" },
   { label: "Studios", href: "/studios" },
   { label: "How It Works", href: "/#how-it-works" },
-  { label: "About", href: "/about" },
+  { label: "About", href: "/#about" },
 ] as const
 
 export const footerNavigation = [
@@ -16,7 +16,7 @@ export const footerNavigation = [
     title: "Explore",
     links: [
       { label: "Studios", href: "/studios" },
-      { label: "About CreatorBay", href: "/about" },
+      { label: "About CreatorBay", href: "/#about" },
     ],
   },
   {

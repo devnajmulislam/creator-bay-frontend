@@ -45,7 +45,7 @@ export function HostGuaranteeSection() {
                 creator has a real person to call when the plan changes.
               </p>
               <Link
-                href="/about"
+                href="/#host-guarantee"
                 className={buttonVariants({ variant: "outline", size: "lg" })}
               >
                 Read the host guarantee
@@ -97,7 +97,7 @@ export function HostGuaranteeSection() {
                   </div>
                 </div>
                 <Link
-                  href="/about"
+                  href="/#host-guarantee"
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
                 >
                   Get help
